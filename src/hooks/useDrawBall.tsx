@@ -1,4 +1,5 @@
 import { RefObject } from 'react'
+import useBricks from './useBricks'
 
 export default function useDrawBall({
   canvasRef,
@@ -9,26 +10,13 @@ export default function useDrawBall({
   width?: number
   height?: number
 }) {
-  let vectorX = 1
-  let vectorY = 1
-  let ballX = 230
-  let ballY = 30
-  const ballRadius = 1
+  const { bricks } = useBricks()
 
-  const bricks = [
-    {
-      x: 20,
-      y: 40,
-      width: 100,
-      height: 30
-    },
-    {
-      x: 150,
-      y: 140,
-      width: 140,
-      height: 20
-    }
-  ]
+  let vectorX = 1
+  let vectorY = -1
+  let ballX = Math.floor(Math.random() * width)
+  let ballY = Math.floor(Math.random() * height)
+  const ballRadius = 1
 
   window.requestAnimationFrame(animate)
 
@@ -50,9 +38,11 @@ export default function useDrawBall({
       canvasContext.arc(ballX, ballY, ballRadius, 0, 2 * Math.PI)
       canvasContext.stroke()
 
-      for (const { x, y, width, height } of bricks) {
-        canvasContext.rect(x, y, width, height)
-        canvasContext.fill()
+      for (const { x, y, width, height, color, life } of bricks) {
+        if (life > 0) {
+          canvasContext.fillStyle = color
+          canvasContext.fillRect(x, y, width, height)
+        }
       }
     }
   }
@@ -71,13 +61,18 @@ export default function useDrawBall({
   }
 
   function checkCollisions() {
-    for (const { x, y, width, height } of bricks) {
-      if (ballX >= x && ballX <= x + width && ballY >= y && ballY <= y + height) {
-        if (ballY <= y || ballY >= y + height) {
-          vectorY *= -1
-        }
-        if (ballX <= x || ballX >= x + width) {
-          vectorX *= -1
+    for (const brick of bricks) {
+      const { x, y, width, height, life } = brick
+      if (life > 0) {
+        if (ballX >= x && ballX <= x + width && ballY >= y && ballY <= y + height) {
+          if (ballY <= y || ballY >= y + height) {
+            vectorY *= -1
+            brick.life -= 1
+          }
+          if (ballX <= x || ballX >= x + width) {
+            vectorX *= -1
+            brick.life -= 1
+          }
         }
       }
     }
